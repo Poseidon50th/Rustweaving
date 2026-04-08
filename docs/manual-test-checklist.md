@@ -14,6 +14,10 @@
 - [ ] New player starts at full mana
 - [ ] Mana persists after relog
 - [ ] Mana does not passively regenerate
+- [ ] Server initializes mana state on first join/load
+- [ ] Server syncs mana state changes to the client
+- [ ] Mana HUD shows current and max mana
+- [ ] Mana HUD updates after relog or state sync
 
 ## Sleep restore
 

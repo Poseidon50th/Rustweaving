@@ -18,6 +18,7 @@ public sealed class RustweavingModSystem : ModSystem
     private SpellRegistry? spellRegistry;
     private SpellCastService? spellCastService;
     private MagicNetwork? magicNetwork;
+    private ManaStateService? manaStateService;
     private HudManaBar? hudManaBar;
 
     public override void Start(ICoreAPI api)
@@ -40,6 +41,8 @@ public sealed class RustweavingModSystem : ModSystem
         spellCastService = new SpellCastService(api, spellRegistry);
         magicNetwork ??= new MagicNetwork(api);
         magicNetwork.InitializeServer(api);
+        manaStateService = new ManaStateService(api, magicNetwork);
+        api.Event.RegisterGameTickListener(manaStateService.EnsureOnlinePlayersInitialized, 1000);
 
         api.Logger.Notification($"{LogPrefix} Server-side vertical slice skeleton initialized.");
     }
@@ -48,7 +51,7 @@ public sealed class RustweavingModSystem : ModSystem
     {
         magicNetwork ??= new MagicNetwork(api);
         magicNetwork.InitializeClient(api);
-        hudManaBar = new HudManaBar(api);
+        hudManaBar = new HudManaBar(api, magicNetwork);
 
         api.Logger.Notification($"{LogPrefix} Client-side vertical slice skeleton initialized.");
     }
