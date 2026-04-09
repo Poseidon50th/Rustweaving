@@ -7,6 +7,8 @@ namespace Rustweaving.Magic;
 public sealed class MagicState
 {
     public const string ModDataKey = "rustweaving:magicstate";
+    public const string CurrentManaWatchedAttributeKey = "rustweaving:currentMana";
+    public const string MaxManaWatchedAttributeKey = "rustweaving:maxMana";
     public const int DefaultMaxMana = 100;
 
     [ProtoMember(1)]

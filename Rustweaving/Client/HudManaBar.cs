@@ -12,11 +12,18 @@ public sealed class HudManaBar : GuiDialogGeneric
     private const string ComposerName = "rustweaving-manahud";
     private const string TextKey = "manaText";
     private const string BarKey = "manaBar";
+    private static readonly double HudWidth = 180;
+    private static readonly double HudHeight = 44;
+    private static readonly double TextWidth = 180;
+    private static readonly double TextHeight = 16;
+    private static readonly double BarWidth = 180;
+    private static readonly double BarHeight = 12;
 
     private readonly ICoreClientAPI api;
     private readonly MagicNetwork magicNetwork;
     private readonly long updateListenerId;
 
+    private bool composedSuccessfully;
     private int lastCurrentMana = -1;
     private int lastMaxMana = -1;
 
@@ -64,21 +71,35 @@ public sealed class HudManaBar : GuiDialogGeneric
 
     private void ComposeHud()
     {
-        ElementBounds dialogBounds = ElementBounds.Fixed(EnumDialogArea.RightTop, -260, 40, 220, 64);
-        ElementBounds backgroundBounds = dialogBounds.ForkBoundingParent(0, 0, 0, 0);
-        ElementBounds textBounds = ElementBounds.Fixed(12, 10, 196, 20);
-        ElementBounds statbarBounds = ElementBounds.Fixed(12, 34, 196, 14);
+        if (HudWidth <= 0 || HudHeight <= 0 || TextWidth <= 0 || TextHeight <= 0 || BarWidth <= 0 || BarHeight <= 0)
+        {
+            api.Logger.Notification($"{LogPrefix} skipping mana HUD compose due to invalid bounds width={HudWidth} height={HudHeight}");
+            composedSuccessfully = false;
+            return;
+        }
+
+        ElementBounds dialogBounds = ElementBounds.Fixed(EnumDialogArea.LeftTop, 12, 12, HudWidth, HudHeight);
+        ElementBounds textBounds = ElementBounds.Fixed(0, 0, TextWidth, TextHeight);
+        ElementBounds statbarBounds = ElementBounds.Fixed(0, 24, BarWidth, BarHeight);
+
+        api.Logger.Notification($"{LogPrefix} composing mana HUD width={HudWidth} height={HudHeight}");
 
         SingleComposer = api.Gui
             .CreateCompo(ComposerName, dialogBounds)
-            .AddShadedDialogBG(backgroundBounds)
             .AddDynamicText("Mana 0 / 0", CairoFont.WhiteSmallishText(), textBounds, TextKey)
             .AddStatbar(statbarBounds, new double[] { 0.12, 0.47, 0.86, 0.95 }, false, BarKey)
             .Compose(false);
+
+        composedSuccessfully = true;
     }
 
     private void OnHudTick(float deltaTime)
     {
+        if (!composedSuccessfully)
+        {
+            return;
+        }
+
         if (!IsOpened())
         {
             TryOpen();
@@ -89,11 +110,21 @@ public sealed class HudManaBar : GuiDialogGeneric
 
     private void UpdateHud(bool forceLog)
     {
-        IPlayer? player = api.World.Player;
-        MagicState? state = player is null ? null : magicNetwork.ReadManaState(player);
+        if (!composedSuccessfully || SingleComposer is null)
+        {
+            return;
+        }
 
-        int currentMana = state?.CurrentMana ?? 0;
-        int maxMana = state?.MaxMana ?? 0;
+        IPlayer? player = api.World.Player;
+        MagicState? state = player is null ? null : magicNetwork.ReadSyncedManaState(player);
+
+        if (player?.Entity is null || state is null || state.MaxMana <= 0)
+        {
+            return;
+        }
+
+        int currentMana = state.CurrentMana;
+        int maxMana = state.MaxMana;
 
         SingleComposer.GetDynamicText(TextKey).SetNewText($"Mana {currentMana} / {maxMana}");
         SingleComposer.GetStatbar(BarKey).SetValues(currentMana, 0, Math.Max(1, maxMana));

@@ -32,7 +32,7 @@ public sealed class ManaStateService
 
     public MagicState EnsureState(IServerPlayer player)
     {
-        MagicState? existingState = magicNetwork.ReadManaState(player);
+        MagicState? existingState = magicNetwork.ReadPersistedManaState(player);
         bool created = existingState is null;
 
         MagicState state = existingState?.Clone() ?? MagicState.CreateDefault();
@@ -52,8 +52,10 @@ public sealed class ManaStateService
         {
             api.Logger.Notification($"{LogPrefix} mana init clamp player={player.PlayerUID} current={state.CurrentMana} max={state.MaxMana}");
             magicNetwork.SyncManaState(player, state, "clamp");
+            return state;
         }
 
+        magicNetwork.SyncWatchedManaState(player, state, "entitySync");
         return state;
     }
 

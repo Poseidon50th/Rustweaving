@@ -18,6 +18,8 @@
 - [ ] Server syncs mana state changes to the client
 - [ ] Mana HUD shows current and max mana
 - [ ] Mana HUD updates after relog or state sync
+- [ ] Mana HUD composes without client startup exceptions
+- [ ] Mana HUD reads synced watched attributes without client exceptions
 
 ## Sleep restore
 
